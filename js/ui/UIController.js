@@ -1243,13 +1243,12 @@ export class UIController {
     }
     
     getTargetPopulation() {
-        // Calculate a target population based on world size and resource availability
         const worldSize = this.simulation.getWorldSize();
         const resourceAbundance = this.simulation.resourceAbundance;
-        
-        // Basic formula for carrying capacity
-        return Math.floor((worldSize * worldSize) / 30 * resourceAbundance);
-    }
+        const environmentalFactor = 1.2 - this.simulation.environmentalHarshness; // Plus c'est dur, plus c'est bas
+    
+        return Math.max(5, Math.floor((worldSize * worldSize) / 30 * resourceAbundance * environmentalFactor));
+    }    
     
     updateAllUIElements() {
         const elements = {

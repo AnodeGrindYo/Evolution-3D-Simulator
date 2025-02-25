@@ -885,71 +885,55 @@
             }
             
             setupPopulationAdjustmentControls() {
-                // Remove previous listeners if they exist
-                const oldDecreaseButtons = document.querySelectorAll('.decrease-population');
-                const oldIncreaseButtons = document.querySelectorAll('.increase-population');
-                const oldPopulationBars = document.querySelectorAll('.population-bar');
-                const oldPopulationContainers = document.querySelectorAll('.population-bar-container');
-                
-                oldDecreaseButtons.forEach(button => {
-                    const newButton = button.cloneNode(true);
-                    button.parentNode.replaceChild(newButton, button);
+                const container = document.getElementById('population-type-controls');
+                if (!container) return;
+            
+                // Nettoyer les anciens événements pour éviter les doublons
+                container.innerHTML = '';
+            
+                const stats = this.statistics.getStats();
+                Object.keys(stats.behaviorCounts).forEach(behavior => {
+                    const count = stats.behaviorCounts[behavior];
+            
+                    const controlGroup = document.createElement('div');
+                    controlGroup.className = 'population-control-group';
+            
+                    const label = document.createElement('div');
+                    label.className = 'population-control-label';
+                    label.textContent = `${behavior.charAt(0).toUpperCase() + behavior.slice(1)}: ${count}`;
+            
+                    const buttonsContainer = document.createElement('div');
+                    buttonsContainer.className = 'population-buttons';
+            
+                    const decreaseBtn = document.createElement('button');
+                    decreaseBtn.className = 'population-btn decrease-population';
+                    decreaseBtn.textContent = '-';
+                    decreaseBtn.dataset.behavior = behavior;
+            
+                    const increaseBtn = document.createElement('button');
+                    increaseBtn.className = 'population-btn increase-population';
+                    increaseBtn.textContent = '+';
+                    increaseBtn.dataset.behavior = behavior;
+            
+                    buttonsContainer.appendChild(decreaseBtn);
+                    buttonsContainer.appendChild(increaseBtn);
+                    controlGroup.appendChild(label);
+                    controlGroup.appendChild(buttonsContainer);
+                    container.appendChild(controlGroup);
+
+                });
+            
+                // Attacher les événements en utilisant l'écouteur global
+                container.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('increase-population')) {
+                        this.adjustPopulation(e.target.dataset.behavior, 1);
+                    } else if (e.target.classList.contains('decrease-population')) {
+                        this.adjustPopulation(e.target.dataset.behavior, -1);
+                    }
                 });
                 
-                oldIncreaseButtons.forEach(button => {
-                    const newButton = button.cloneNode(true);
-                    button.parentNode.replaceChild(newButton, button);
-                });
-                
-                // Add new listeners
-                const decreaseButtons = document.querySelectorAll('.decrease-population');
-                const increaseButtons = document.querySelectorAll('.increase-population');
-                const populationBars = document.querySelectorAll('.population-bar');
-                const populationContainers = document.querySelectorAll('.population-bar-container');
-                
-                decreaseButtons.forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const behavior = e.target.getAttribute('data-behavior');
-                        this.adjustPopulation(behavior, -1);
-                    });
-                });
-                
-                increaseButtons.forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const behavior = e.target.getAttribute('data-behavior');
-                        this.adjustPopulation(behavior, 1);
-                    });
-                });
-                
-                // Make the containers and bars draggable to adjust population
-                populationContainers.forEach(container => {
-                    container.addEventListener('mousedown', (e) => {
-                        const behavior = container.getAttribute('data-behavior');
-                        
-                        // If we clicked on a button, don't start dragging
-                        if (e.target.tagName === 'BUTTON') return;
-                        
-                        this.draggingBarContainer = container;
-                        this.draggingBar = behavior;
-                        
-                        // Handle initial adjustment on click
-                        this.handleBarDrag(e);
-                        
-                        // Add document listeners for dragging
-                        document.addEventListener('mousemove', this.handleDocumentMouseMove);
-                        document.addEventListener('mouseup', this.handleDocumentMouseUp);
-                    });
-                });
-                
-                // Store bound functions for removal later
-                this.handleDocumentMouseMove = this.handleBarDrag.bind(this);
-                this.handleDocumentMouseUp = () => {
-                    this.draggingBar = null;
-                    this.draggingBarContainer = null;
-                    document.removeEventListener('mousemove', this.handleDocumentMouseMove);
-                    document.removeEventListener('mouseup', this.handleDocumentMouseUp);
-                };
             }
+            
             
             handleBarDrag(e) {
                 if (!this.draggingBar || !this.draggingBarContainer) return;
@@ -974,53 +958,33 @@
             }
             
             adjustPopulation(behavior, amount) {
-                // Don't do anything if amount is 0
                 if (amount === 0) return;
-                
-                // If removing organisms
+            
                 if (amount < 0) {
-                    const stats = this.statistics.getStats();
-                    
-                    // Check if we have enough organisms of this type to remove
-                    if (stats.behaviorCounts[behavior] < Math.abs(amount)) {
-                        amount = -stats.behaviorCounts[behavior]; // Only remove as many as exist
-                    }
-                    
-                    if (amount === 0) return; // Nothing to remove
-                    
-                    // Find organisms with this behavior to remove
-                    const organisms = this.world.getEntities().filter(entity => 
+                    const organisms = this.world.getEntities().filter(entity =>
                         entity.isAlive && entity.getBehaviorType() === behavior
-                    );
-                    
-                    // Sort by age to remove oldest first, reducing impact on reproduction
-                    organisms.sort((a, b) => b.age - a.age);
-                    
-                    // Remove the specified number of organisms
+                    ).sort((a, b) => b.age - a.age);
+            
                     for (let i = 0; i < Math.abs(amount) && i < organisms.length; i++) {
                         organisms[i].die();
                     }
-                }
-                // If adding organisms
-                else {
-                    // Add the specified number of organisms
+                } else {
                     for (let i = 0; i < amount; i++) {
                         const position = this.simulation.findSafePosition();
-                        if (position) {
-                            this.simulation.addOrganismAt(behavior, position);
-                        } else {
-                            // If we can't find a safe position, stop adding
-                            break;
+                        if (!position) {
+                            console.warn(`No safe position found for new ${behavior} organism.`);
+                            break; // Arrêter l'ajout si aucune position valide
                         }
+                        this.simulation.addOrganismAt(behavior, position);
                     }
                 }
-                
-                // Force an immediate statistics update for better feedback
+            
                 setTimeout(() => {
                     this.statistics.update(this.world.getEntities());
                     this.updateStatistics();
                 }, 100);
             }
+            
             
             updateBehaviorDistribution() {
                 const container = document.getElementById('behavior-distribution');
@@ -1256,12 +1220,11 @@
             }
             
             getTargetPopulation() {
-                // Calculate a target population based on world size and resource availability
                 const worldSize = this.simulation.getWorldSize();
                 const resourceAbundance = this.simulation.resourceAbundance;
-                
-                // Basic formula for carrying capacity
-                return Math.floor((worldSize * worldSize) / 30 * resourceAbundance);
+                const environmentalFactor = 1.2 - this.simulation.environmentalHarshness; // Plus c'est dur, plus c'est bas
+            
+                return Math.max(5, Math.floor((worldSize * worldSize) / 30 * resourceAbundance * environmentalFactor));
             }
             
             updateAllUIElements() {
