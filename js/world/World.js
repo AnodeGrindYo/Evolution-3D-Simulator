@@ -105,34 +105,52 @@ export class World {
         this.placementItemType = itemType;
         this.placementOptions = options;
         
-        // Enable controls for placing objects
+        // Sur mobile, masquer le panneau de contrôle pour libérer de l'espace
+        if (window.innerWidth < 768) {
+            const controlPanel = document.getElementById('control-panel');
+            if (controlPanel) {
+                controlPanel.classList.add('hidden');
+            }
+        }
+        
         document.getElementById('placement-controls').classList.remove('hidden');
         
-        // Add click event listener for placement
-        this.renderer.domElement.addEventListener('click', this.clickHandler);
-        this.renderer.domElement.addEventListener('mousemove', this.mouseMoveHandler);
-        
-        // Disable orbit controls during placement mode
+        if (window.PointerEvent) {
+            this.renderer.domElement.addEventListener('pointerup', this.clickHandler);
+            this.renderer.domElement.addEventListener('pointermove', this.mouseMoveHandler);
+        } else {
+            this.renderer.domElement.addEventListener('click', this.clickHandler);
+            this.renderer.domElement.addEventListener('touchend', this.clickHandler, { passive: false });
+            this.renderer.domElement.addEventListener('mousemove', this.mouseMoveHandler);
+            this.renderer.domElement.addEventListener('touchmove', this.mouseMoveHandler, { passive: false });
+        }
         this.controls.enabled = false;
-        
-        // Create ghost object
         this.createGhostObject();
     }
     
     deactivatePlacementMode() {
         this.placementMode = false;
-        
-        // Hide placement controls
         document.getElementById('placement-controls').classList.add('hidden');
         
-        // Remove event listeners
-        this.renderer.domElement.removeEventListener('click', this.clickHandler);
-        this.renderer.domElement.removeEventListener('mousemove', this.mouseMoveHandler);
-        
-        // Re-enable orbit controls
+        if (window.PointerEvent) {
+            this.renderer.domElement.removeEventListener('pointerup', this.clickHandler);
+            this.renderer.domElement.removeEventListener('pointermove', this.mouseMoveHandler);
+        } else {
+            this.renderer.domElement.removeEventListener('click', this.clickHandler);
+            this.renderer.domElement.removeEventListener('touchend', this.clickHandler, { passive: false });
+            this.renderer.domElement.removeEventListener('mousemove', this.mouseMoveHandler);
+            this.renderer.domElement.removeEventListener('touchmove', this.mouseMoveHandler, { passive: false });
+        }
         this.controls.enabled = true;
         
-        // Remove ghost object if it exists
+        // Réafficher le panneau de contrôle sur mobile une fois le placement terminé
+        if (window.innerWidth < 768) {
+            const controlPanel = document.getElementById('control-panel');
+            if (controlPanel) {
+                controlPanel.classList.remove('hidden');
+            }
+        }
+        
         if (this.ghostObject) {
             this.scene.remove(this.ghostObject);
             this.ghostObject = null;

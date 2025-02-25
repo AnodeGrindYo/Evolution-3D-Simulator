@@ -112,6 +112,16 @@ export class UIController {
         // Removing automatic opening of first accordion item
         // No longer automatically opening the first accordion by default
     }
+
+    addInteractionListener(element, handler) {
+        if (!element) return;
+        if (window.PointerEvent) {
+            element.addEventListener('pointerup', handler);
+        } else {
+            element.addEventListener('click', handler);
+            element.addEventListener('touchend', handler, { passive: false });
+        }
+    }
     
     setupEventListeners() {
         // Basic simulation controls
