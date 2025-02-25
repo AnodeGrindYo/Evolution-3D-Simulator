@@ -1,0 +1,365 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evolutionary Simulation</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.137.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.137.0/examples/js/controls/OrbitControls.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+</head>
+<body>
+    <div id="simulation-container"></div>
+    
+    <div id="placement-controls" class="hidden">
+        <div class="placement-panel dark-theme">
+            <h3>Placement Mode</h3>
+            <div class="placement-options">
+                <select id="place-item-type" class="control-select">
+                    <option value="organism">Organism</option>
+                    <option value="food">Food</option>
+                    <option value="tree">Tree</option>
+                    <option value="rock">Rock</option>
+                </select>
+                <select id="place-organism-type" class="control-select">
+                    <option value="random">Random</option>
+                    <option value="aggressive">Aggressive</option>
+                    <option value="altruistic">Altruistic</option>
+                    <option value="titfortat">Tit-for-Tat</option>
+                    <option value="cooperative">Cooperative</option>
+                    <option value="selfish">Selfish</option>
+                    <option value="qlearning">Q-Learning</option>
+                    <option value="deepq">Deep Q-Learning</option>
+                </select>
+                <select id="place-food-type" class="control-select hidden">
+                    <option value="apple">Apple</option>
+                    <option value="orange">Orange</option>
+                    <option value="berry">Berry</option>
+                    <option value="banana">Banana</option>
+                </select>
+            </div>
+            <div class="placement-buttons">
+                <button id="cancel-placement" class="control-btn"><i class="fas fa-times"></i> Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="controls-toggle">
+        <button id="toggle-controls-btn"><i class="fas fa-cog"></i></button>
+    </div>
+    
+    <div id="control-panel" class="dark-theme">
+        <div class="panel-header">
+            <h2>Simulation Controls</h2>
+            <button id="close-panel-btn"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="panel-content">
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <h3>Simulation Settings</h3>
+                        <span class="accordion-icon"><i class="fas fa-chevron-down"></i></span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="control-group">
+                            <label for="simulation-speed">Speed:</label>
+                            <div class="slider-container">
+                                <input type="range" id="simulation-speed" min="0.1" max="5" step="0.1" value="1">
+                                <span id="speed-value">1x</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <button id="pause-btn" class="control-btn"><i class="fas fa-pause"></i> Pause</button>
+                            <button id="reset-btn" class="control-btn"><i class="fas fa-redo"></i> Reset</button>
+                        </div>
+                        
+                        <div class="control-group">
+                            <button id="optimize-equilibrium-btn" class="control-btn"><i class="fas fa-balance-scale"></i> Auto-Optimize Equilibrium</button>
+                            <button id="stop-optimization-btn" class="control-btn"><i class="fas fa-stop"></i> Stop Optimization</button>
+                        </div>
+                        
+                        <div id="equilibrium-container" class="hidden">
+                            <h4 class="equilibrium-status">Population Equilibrium Status</h4>
+                            <div id="equilibrium-stats">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <button id="save-btn" class="control-btn"><i class="fas fa-save"></i> Save Simulation</button>
+                            <button id="load-btn" class="control-btn"><i class="fas fa-folder-open"></i> Load Simulation</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <h3>Population Controls</h3>
+                        <span class="accordion-icon"><i class="fas fa-chevron-down"></i></span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="control-group">
+                            <label for="initial-population">Initial Population:</label>
+                            <div class="slider-container">
+                                <input type="range" id="initial-population" min="5" max="100" step="5" value="20">
+                                <span id="population-value">20</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label>Add Organism:</label>
+                            <select id="behavior-type" class="control-select">
+                                <option value="random">Random</option>
+                                <option value="aggressive">Aggressive</option>
+                                <option value="altruistic">Altruistic</option>
+                                <option value="titfortat">Tit-for-Tat</option>
+                                <option value="cooperative">Cooperative</option>
+                                <option value="selfish">Selfish</option>
+                                <option value="qlearning">Q-Learning</option>
+                                <option value="deepq">Deep Q-Learning</option>
+                            </select>
+                            <button id="add-organism-btn" class="control-btn"><i class="fas fa-plus"></i> Add</button>
+                        </div>
+                        
+                        <div class="control-group">
+                            <button id="placement-mode-btn" class="control-btn"><i class="fas fa-hand-pointer"></i> Placement Mode</button>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label>Population Distribution:</label>
+                            <div id="behavior-distribution"></div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label>Adjust Populations:</label>
+                            <div id="population-type-controls">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <h3>Environment Settings</h3>
+                        <span class="accordion-icon"><i class="fas fa-chevron-down"></i></span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="control-group">
+                            <label for="world-size">World Size:</label>
+                            <div class="slider-container">
+                                <input type="range" id="world-size" min="20" max="100" step="10" value="40">
+                                <span id="world-size-value">40</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="resource-abundance">Resource Abundance:</label>
+                            <div class="slider-container">
+                                <input type="range" id="resource-abundance" min="0.1" max="5" step="0.1" value="1">
+                                <span id="resource-value">1x</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="environment-harshness">Environmental Harshness:</label>
+                            <div class="slider-container">
+                                <input type="range" id="environment-harshness" min="0.1" max="2" step="0.1" value="0.8">
+                                <span id="harshness-value">0.8x</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="food-spawn-rate">Food Spawn Rate:</label>
+                            <div class="slider-container">
+                                <input type="range" id="food-spawn-rate" min="0.1" max="8" step="0.1" value="1.5">
+                                <span id="food-rate-value">1.5x</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="food-energy-value">Food Energy Value:</label>
+                            <div class="slider-container">
+                                <input type="range" id="food-energy-value" min="5" max="70" step="5" value="30">
+                                <span id="food-energy-value-display">30</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <h3>Organism Parameters</h3>
+                        <span class="accordion-icon"><i class="fas fa-chevron-down"></i></span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="control-group">
+                            <label for="base-energy">Base Energy:</label>
+                            <div class="slider-container">
+                                <input type="range" id="base-energy" min="50" max="200" step="10" value="100">
+                                <span id="energy-value">100</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="base-speed">Base Speed:</label>
+                            <div class="slider-container">
+                                <input type="range" id="base-speed" min="0.5" max="3" step="0.1" value="1">
+                                <span id="speed-base-value">1x</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="base-size">Base Size:</label>
+                            <div class="slider-container">
+                                <input type="range" id="base-size" min="0.5" max="2" step="0.1" value="1">
+                                <span id="size-value">1x</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="base-lifespan">Base Lifespan:</label>
+                            <div class="slider-container">
+                                <input type="range" id="base-lifespan" min="20" max="200" step="10" value="100">
+                                <span id="lifespan-value">100</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="base-reproduction">Reproduction Rate:</label>
+                            <div class="slider-container">
+                                <input type="range" id="base-reproduction" min="0.001" max="0.02" step="0.001" value="0.005">
+                                <span id="reproduction-value">0.005</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="mutation-rate">Mutation Rate:</label>
+                            <div class="slider-container">
+                                <input type="range" id="mutation-rate" min="0" max="0.5" step="0.01" value="0.1">
+                                <span id="mutation-value">0.1</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <h3>Behavior Tuning</h3>
+                        <span class="accordion-icon"><i class="fas fa-chevron-down"></i></span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="control-group">
+                            <label for="current-behavior">Modify Behavior:</label>
+                            <select id="current-behavior" class="control-select">
+                                <option value="aggressive">Aggressive</option>
+                                <option value="altruistic">Altruistic</option>
+                                <option value="titfortat">Tit-for-Tat</option>
+                                <option value="cooperative">Cooperative</option>
+                                <option value="selfish">Selfish</option>
+                                <option value="qlearning">Q-Learning</option>
+                                <option value="deepq">Deep Q-Learning</option>
+                            </select>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="interaction-strength">Interaction Strength:</label>
+                            <div class="slider-container">
+                                <input type="range" id="interaction-strength" min="0.1" max="2" step="0.1" value="1">
+                                <span id="interaction-value">1x</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="memory-duration">Memory Duration:</label>
+                            <div class="slider-container">
+                                <input type="range" id="memory-duration" min="10" max="100" step="5" value="50">
+                                <span id="memory-value">50</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <h3>Statistics</h3>
+                        <span class="accordion-icon"><i class="fas fa-chevron-down"></i></span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="stats-panel">
+                            <div id="population-stats"></div>
+                            <div id="behavior-stats"></div>
+                            <div id="stats-graph"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <h3>Visual Settings</h3>
+                        <span class="accordion-icon"><i class="fas fa-chevron-down"></i></span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="control-group">
+                            <label for="camera-distance">Camera Distance:</label>
+                            <div class="slider-container">
+                                <input type="range" id="camera-distance" min="10" max="50" step="1" value="20">
+                                <span id="camera-value">20</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="display-labels">Display Labels:</label>
+                            <label class="switch">
+                                <input type="checkbox" id="display-labels">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="show-interactions">Show Interactions:</label>
+                            <label class="switch">
+                                <input type="checkbox" id="show-interactions" checked>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="show-health-bars">Show Health Bars:</label>
+                            <label class="switch">
+                                <input type="checkbox" id="show-health-bars" checked>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <h3>Saved Simulations</h3>
+                        <span class="accordion-icon"><i class="fas fa-chevron-down"></i></span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="control-group">
+                            <label for="simulation-name">Simulation Name:</label>
+                            <input type="text" id="simulation-name" class="control-input" placeholder="My Simulation">
+                        </div>
+                        
+                        <div class="control-group">
+                            <div id="saved-simulations-list">
+                                <!-- Saved simulations will be listed here -->
+                                <p class="no-saves-message">No saved simulations yet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main application scripts -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
