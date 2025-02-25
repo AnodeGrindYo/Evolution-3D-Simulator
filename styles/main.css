@@ -644,3 +644,22 @@ input:checked + .slider:before {
         max-width: 300px;
     }
 }
+
+/* Pour agrandir les listes déroulantes et laisser le comportement natif */
+select {
+    font-size: 18px;
+    padding: 8px;
+    touch-action: auto;
+}
+
+/* Pour les boutons radio/checkbox, autoriser les interactions natives */
+#control-panel input[type="checkbox"],
+#control-panel input[type="radio"] {
+    pointer-events: auto;
+    touch-action: auto;
+}
+
+/* Pour le panneau de contrôle, ajouter une règle pour la version mobile en mode placement */
+#control-panel.hidden {
+    display: none;
+}
