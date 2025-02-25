@@ -1445,19 +1445,15 @@ export class UIController {
         try {
             const savedSimulations = this.getSavedSimulations();
             const simulation = savedSimulations.find(sim => sim.name === name);
-            
+    
             if (!simulation) {
                 alert(`Simulation "${name}" not found.`);
                 return false;
             }
-            
+    
             if (confirm(`Load simulation "${name}"? Current simulation will be replaced.`)) {
-                // Load the simulation
                 this.simulation.deserialize(simulation);
-                
-                // Update UI
                 this.updateAllUIElements();
-                
                 alert(`Simulation "${name}" loaded successfully!`);
                 return true;
             }
@@ -1467,6 +1463,7 @@ export class UIController {
         }
         return false;
     }
+    
     
     deleteSavedSimulation(name) {
         try {
