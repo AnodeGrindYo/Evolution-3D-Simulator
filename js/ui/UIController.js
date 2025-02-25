@@ -466,14 +466,42 @@ export class UIController {
     setupBehaviorControls() {
         // Behavior selection dropdown
         const behaviorSelect = document.getElementById('current-behavior');
-        
+    
         // Interaction strength slider
         const interactionControl = document.getElementById('interaction-strength');
         const interactionValue = document.getElementById('interaction-value');
-        
-        if (!behaviorSelect || !interactionControl || !interactionValue) return;
-        
-        // Update interaction strength when behavior or slider changes
+    
+        // Memory duration slider
+        const memoryControl = document.getElementById('memory-duration');
+        const memoryValue = document.getElementById('memory-value');
+    
+        // Unlimited memory checkbox
+        const unlimitedMemoryToggle = document.getElementById('unlimited-memory');
+    
+        // Vérification de l'existence des éléments
+        if (!behaviorSelect || !interactionControl || !interactionValue || 
+            !memoryControl || !memoryValue || !unlimitedMemoryToggle) {
+            console.warn("setupBehaviorControls: Certains éléments de l'UI sont introuvables.");
+            return;
+        }
+    
+        // Fonction pour mettre à jour les contrôles en fonction du comportement sélectionné
+        const updateUI = () => {
+            const behavior = behaviorSelect.value;
+    
+            // Met à jour le slider d'interaction strength
+            interactionControl.value = this.simulation.getBehaviorInteractionStrength(behavior);
+            interactionValue.textContent = `${parseFloat(interactionControl.value).toFixed(1)}x`;
+    
+            // Met à jour le slider de mémoire
+            memoryControl.value = this.simulation.getBehaviorMemoryDuration(behavior);
+            memoryValue.textContent = memoryControl.value;
+    
+            // Met à jour la checkbox de mémoire illimitée
+            unlimitedMemoryToggle.checked = this.simulation.getUnlimitedMemoryForBehavior(behavior);
+        };
+    
+        // Gestion du slider d'interaction strength
         const updateInteractionStrength = () => {
             const behavior = behaviorSelect.value;
             const strength = parseFloat(interactionControl.value);
@@ -481,23 +509,8 @@ export class UIController {
             interactionValue.textContent = `${strength.toFixed(1)}x`;
             this.saveSimulationSettings();
         };
-        
-        behaviorSelect.addEventListener('change', () => {
-            // Update slider to show current value for selected behavior
-            const behavior = behaviorSelect.value;
-            interactionControl.value = this.simulation.getBehaviorInteractionStrength(behavior);
-            interactionValue.textContent = `${parseFloat(interactionControl.value).toFixed(1)}x`;
-        });
-        
-        interactionControl.addEventListener('input', updateInteractionStrength);
-        
-        // Memory duration slider
-        const memoryControl = document.getElementById('memory-duration');
-        const memoryValue = document.getElementById('memory-value');
-        
-        if (!memoryControl || !memoryValue) return;
-        
-        // Update memory duration when behavior or slider changes
+    
+        // Gestion du slider de mémoire
         const updateMemoryDuration = () => {
             const behavior = behaviorSelect.value;
             const duration = parseInt(memoryControl.value);
@@ -505,16 +518,24 @@ export class UIController {
             memoryValue.textContent = duration;
             this.saveSimulationSettings();
         };
-        
-        behaviorSelect.addEventListener('change', () => {
-            // Update slider to show current value for selected behavior
+    
+        // Gestion du toggle mémoire illimitée
+        const updateUnlimitedMemory = () => {
             const behavior = behaviorSelect.value;
-            memoryControl.value = this.simulation.getBehaviorMemoryDuration(behavior);
-            memoryValue.textContent = memoryControl.value;
-        });
-        
+            const enableUnlimitedMemory = unlimitedMemoryToggle.checked;
+            this.simulation.setUnlimitedMemoryForBehavior(behavior, enableUnlimitedMemory);
+            this.saveSimulationSettings();
+        };
+    
+        // Ajout des écouteurs d'événements
+        behaviorSelect.addEventListener('change', updateUI);
+        interactionControl.addEventListener('input', updateInteractionStrength);
         memoryControl.addEventListener('input', updateMemoryDuration);
-    }
+        unlimitedMemoryToggle.addEventListener('change', updateUnlimitedMemory);
+    
+        // Mise à jour initiale de l'UI
+        updateUI();
+    }    
     
     setupVisualControls() {
         // Contrôle de la distance de la caméra (slider)
