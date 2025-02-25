@@ -38,16 +38,21 @@ export class UIController {
         const toggleButton = document.getElementById('toggle-controls-btn');
         const closeButton = document.getElementById('close-panel-btn');
         
-        // Show the control panel initially
+        // Affiche le panneau de contrôle au démarrage
         controlPanel.classList.add('visible');
         
-        // Toggle panel visibility
-        toggleButton.addEventListener('click', () => {
+        // Fonction de basculement de visibilité
+        const toggleVisibility = () => {
             controlPanel.classList.toggle('visible');
+        };
+        
+        this.addInteractionListener(toggleButton, (e) => {
+            e.preventDefault();
+            toggleVisibility();
         });
         
-        // Close panel
-        closeButton.addEventListener('click', () => {
+        this.addInteractionListener(closeButton, (e) => {
+            e.preventDefault();
             controlPanel.classList.remove('visible');
         });
     }
@@ -55,62 +60,56 @@ export class UIController {
     setupAccordion() {
         const accordionHeaders = document.querySelectorAll('.accordion-header');
         
-        accordionHeaders.forEach(header => {
-            header.addEventListener('click', () => {
-                // Toggle this accordion item
-                header.classList.toggle('active');
-                const content = header.nextElementSibling;
-                
-                if (content.classList.contains('active')) {
-                    // Close the content
-                    content.style.maxHeight = null;
-                    content.classList.remove('active');
-                    
-                    // Find and disconnect the observer for this content if it exists
-                    this.resizeObservers.forEach((observer, index) => {
-                        if (observer.target === content) {
-                            observer.observer.disconnect();
-                            this.resizeObservers.splice(index, 1);
-                        }
-                    });
-                } else {
-                    // Open the content
-                    content.classList.add('active');
-                    
-                    // Use setTimeout to avoid multiple style recalculations in the same frame
-                    setTimeout(() => {
-                        if (content.classList.contains('active')) {
-                            content.style.maxHeight = content.scrollHeight + 'px';
-                        }
-                    }, 10);
-                    
-                    // Create a ResizeObserver with error handling
-                    try {
-                        const resizeObserver = new ResizeObserver((entries) => {
-                            // Use requestAnimationFrame to avoid layout thrashing
-                            requestAnimationFrame(() => {
-                                if (content.classList.contains('active') && content.style) {
-                                    content.style.maxHeight = content.scrollHeight + 'px';
-                                }
-                            });
-                        });
-                        
-                        resizeObserver.observe(content);
-                        
-                        // Store the observer reference for cleanup
-                        this.resizeObservers.push({
-                            target: content,
-                            observer: resizeObserver
-                        });
-                    } catch (err) {
-                        console.warn('ResizeObserver error:', err);
+        const toggleAccordion = (header) => {
+            header.classList.toggle('active');
+            const content = header.nextElementSibling;
+            if (content.classList.contains('active')) {
+                content.style.maxHeight = null;
+                content.classList.remove('active');
+                this.resizeObservers.forEach((observer, index) => {
+                    if (observer.target === content) {
+                        observer.observer.disconnect();
+                        this.resizeObservers.splice(index, 1);
                     }
+                });
+            } else {
+                content.classList.add('active');
+                setTimeout(() => {
+                    if (content.classList.contains('active')) {
+                        content.style.maxHeight = content.scrollHeight + 'px';
+                    }
+                }, 10);
+                try {
+                    const resizeObserver = new ResizeObserver((entries) => {
+                        requestAnimationFrame(() => {
+                            if (content.classList.contains('active') && content.style) {
+                                content.style.maxHeight = content.scrollHeight + 'px';
+                            }
+                        });
+                    });
+                    resizeObserver.observe(content);
+                    this.resizeObservers.push({ target: content, observer: resizeObserver });
+                } catch (err) {
+                    console.warn('ResizeObserver error:', err);
                 }
+            }
+        };
+        
+        accordionHeaders.forEach(header => {
+            // Si c'est la section "Statistics", forcer son ouverture sur mobile
+            if (header.textContent.trim().toLowerCase().includes("statistics") && window.innerWidth < 768) {
+                const content = header.nextElementSibling;
+                if (!content.classList.contains('active')) {
+                    header.classList.add('active');
+                    content.classList.add('active');
+                    content.style.maxHeight = content.scrollHeight + 'px';
+                }
+            }
+            this.addInteractionListener(header, (e) => {
+                e.preventDefault();
+                toggleAccordion(header);
             });
         });
-        
-        // Removing automatic opening of first accordion item
-        // No longer automatically opening the first accordion by default
     }
 
     addInteractionListener(element, handler) {
@@ -192,10 +191,8 @@ export class UIController {
     }
     
     setupPopulationControls() {
-        // Initial population slider
         const populationControl = document.getElementById('initial-population');
         const populationValue = document.getElementById('population-value');
-        
         if (populationControl && populationValue) {
             populationControl.addEventListener('input', () => {
                 const population = parseInt(populationControl.value);
@@ -205,34 +202,32 @@ export class UIController {
             });
         }
         
-        // Add organism button
+        // Pour le bouton "Add Organism", on utilise notre helper pour le clic
         const addOrganismBtn = document.getElementById('add-organism-btn');
+        // ATTENTION : L'élément <select id="behavior-type"> doit garder son comportement natif !
         const behaviorSelect = document.getElementById('behavior-type');
-        
         if (addOrganismBtn && behaviorSelect) {
-            addOrganismBtn.addEventListener('click', () => {
+            this.addInteractionListener(addOrganismBtn, (e) => {
+                e.preventDefault();
+                // Ne modifiez pas la valeur du <select>, utilisez la valeur native
                 const behaviorType = behaviorSelect.value;
                 this.simulation.addOrganism(behaviorType);
             });
         }
         
-        // Placement mode button
         const placementModeBtn = document.getElementById('placement-mode-btn');
         if (placementModeBtn) {
-            placementModeBtn.addEventListener('click', () => {
+            this.addInteractionListener(placementModeBtn, (e) => {
+                e.preventDefault();
+                // Ne bloquez pas le comportement natif du <select> pour le mode placement
                 document.getElementById('placement-controls').classList.remove('hidden');
                 this.world.activatePlacementMode('organism', { behaviorType: 'random' });
             });
         }
         
-        // Add population controls container
-        const populationControlsContainer = document.getElementById('population-type-controls');
-        if (populationControlsContainer) {
-            // We'll dynamically populate this in updateStatistics
+        if (document.getElementById('population-type-controls')) {
             this.updatePopulationControlButtons();
         }
-        
-        // Update behavior distribution visualization
         this.updateBehaviorDistribution();
     }
     
@@ -522,10 +517,9 @@ export class UIController {
     }
     
     setupVisualControls() {
-        // Camera distance slider
+        // Contrôle de la distance de la caméra (slider)
         const cameraControl = document.getElementById('camera-distance');
         const cameraValue = document.getElementById('camera-value');
-        
         if (cameraControl && cameraValue) {
             cameraControl.addEventListener('input', () => {
                 const distance = parseInt(cameraControl.value);
@@ -534,33 +528,32 @@ export class UIController {
                 this.saveSimulationSettings();
             });
         }
-        
-        // Display labels toggle
-        const labelsToggle = document.getElementById('display-labels');
-        if (labelsToggle) {
-            labelsToggle.addEventListener('change', () => {
-                this.simulation.setDisplayLabels(labelsToggle.checked);
-                this.saveSimulationSettings();
-            });
-        }
-        
-        // Show interactions toggle
-        const interactionsToggle = document.getElementById('show-interactions');
-        if (interactionsToggle) {
-            interactionsToggle.addEventListener('change', () => {
-                this.simulation.setShowInteractions(interactionsToggle.checked);
-                this.saveSimulationSettings();
-            });
-        }
-        
-        // Show health bars toggle
-        const healthBarsToggle = document.getElementById('show-health-bars');
-        if (healthBarsToggle) {
-            healthBarsToggle.addEventListener('change', () => {
-                this.simulation.setShowHealthBars(healthBarsToggle.checked);
-                this.saveSimulationSettings();
-            });
-        }
+    
+        // Fonction générique pour gérer les toggles
+        const setupToggle = (id, callback) => {
+            const toggle = document.getElementById(id);
+            if (!toggle) return;
+    
+            const toggleHandler = (e) => {
+                e.preventDefault(); // Empêche d'éventuels comportements inattendus sur mobile
+                setTimeout(() => {
+                    toggle.checked = !toggle.checked; // Force la mise à jour de l'affichage
+                    toggle.dispatchEvent(new Event('change')); // Déclenche un événement "change" artificiel
+                    callback(toggle.checked);
+                    this.saveSimulationSettings();
+                    console.log(`${id} toggled:`, toggle.checked);
+                }, 10);
+            };
+    
+            toggle.addEventListener('change', () => callback(toggle.checked));
+            toggle.addEventListener('click', toggleHandler);
+            toggle.addEventListener('touchend', toggleHandler);
+        };
+    
+        // Assignation des toggles avec leur callback respectif
+        setupToggle('display-labels', (checked) => this.simulation.setDisplayLabels(checked));
+        setupToggle('show-interactions', (checked) => this.simulation.setShowInteractions(checked));
+        setupToggle('show-health-bars', (checked) => this.simulation.setShowHealthBars(checked));
     }
     
     setupEquilibriumControls() {
@@ -585,23 +578,19 @@ export class UIController {
     }
     
     setupPersistenceControls() {
-        // Save button
         const saveBtn = document.getElementById('save-btn');
         const simulationNameInput = document.getElementById('simulation-name');
-        
         if (saveBtn && simulationNameInput) {
+            // Utilisez un écouteur "click" standard pour le bouton SAVE
             saveBtn.addEventListener('click', () => {
                 const name = simulationNameInput.value || 'Simulation ' + new Date().toLocaleString();
                 this.saveCurrentSimulation(name);
             });
         }
         
-        // Load button
         const loadBtn = document.getElementById('load-btn');
-        
         if (loadBtn) {
             loadBtn.addEventListener('click', () => {
-                // Show saved simulations list in case it's not already visible
                 const savedSimulationsAccordion = document.querySelector('.accordion-header h3:contains("Saved Simulations")');
                 if (savedSimulationsAccordion && !savedSimulationsAccordion.parentElement.classList.contains('active')) {
                     savedSimulationsAccordion.parentElement.click();
@@ -611,7 +600,6 @@ export class UIController {
     }
     
     setupPlacementControls() {
-        // Handle item type selection
         const placeItemType = document.getElementById('place-item-type');
         const placeOrganismType = document.getElementById('place-organism-type');
         const placeFoodType = document.getElementById('place-food-type');
@@ -619,8 +607,6 @@ export class UIController {
         if (placeItemType) {
             placeItemType.addEventListener('change', () => {
                 const itemType = placeItemType.value;
-                
-                // Show/hide appropriate secondary selectors
                 if (itemType === 'organism') {
                     placeOrganismType.classList.remove('hidden');
                     placeFoodType.classList.add('hidden');
@@ -631,37 +617,31 @@ export class UIController {
                     placeOrganismType.classList.add('hidden');
                     placeFoodType.classList.add('hidden');
                 }
-                
-                // Update placement mode
                 const options = {};
                 if (itemType === 'organism') {
                     options.behaviorType = placeOrganismType.value;
                 } else if (itemType === 'food') {
                     options.foodType = placeFoodType.value;
                 }
-                
                 this.world.activatePlacementMode(itemType, options);
             });
         }
         
-        // Handle organism type selection
         if (placeOrganismType) {
             placeOrganismType.addEventListener('change', () => {
                 this.world.activatePlacementMode('organism', { behaviorType: placeOrganismType.value });
             });
         }
         
-        // Handle food type selection
         if (placeFoodType) {
             placeFoodType.addEventListener('change', () => {
                 this.world.activatePlacementMode('food', { foodType: placeFoodType.value });
             });
         }
         
-        // Cancel placement button
         const cancelPlacementBtn = document.getElementById('cancel-placement');
         if (cancelPlacementBtn) {
-            cancelPlacementBtn.addEventListener('click', () => {
+            this.addInteractionListener(cancelPlacementBtn, () => {
                 this.world.deactivatePlacementMode();
             });
         }
@@ -1272,77 +1252,21 @@ export class UIController {
     }
     
     updateAllUIElements() {
-        try {
-            const updateElement = (id, value) => {
-                const element = document.getElementById(id);
-                if (element) {
-                    if (element.tagName === 'INPUT' && element.type === 'range') {
-                        element.value = value;
-                    } else if (element.tagName === 'INPUT' && element.type === 'checkbox') {
-                        element.checked = value;
-                    } else {
-                        element.textContent = value;
-                    }
-                }
-            };
-            
-            updateElement('simulation-speed', this.simulation.speed);
-            updateElement('speed-value', `${this.simulation.speed.toFixed(1)}x`);
-            
-            updateElement('initial-population', this.simulation.initialPopulationSize);
-            updateElement('population-value', this.simulation.initialPopulationSize);
-            
-            updateElement('world-size', this.simulation.getWorldSize());
-            updateElement('world-size-value', this.simulation.getWorldSize());
-            
-            updateElement('resource-abundance', this.simulation.resourceAbundance);
-            updateElement('resource-value', `${this.simulation.resourceAbundance.toFixed(1)}x`);
-            
-            updateElement('environment-harshness', this.simulation.environmentalHarshness);
-            updateElement('harshness-value', `${this.simulation.environmentalHarshness.toFixed(1)}x`);
-            
-            updateElement('food-spawn-rate', this.simulation.foodSpawnRate);
-            updateElement('food-rate-value', `${this.simulation.foodSpawnRate.toFixed(1)}x`);
-            
-            updateElement('food-energy-value', this.simulation.foodEnergyValue);
-            updateElement('food-energy-value-display', this.simulation.foodEnergyValue);
-            
-            updateElement('base-energy', this.simulation.baseEnergy);
-            updateElement('energy-value', this.simulation.baseEnergy);
-            
-            updateElement('base-speed', this.simulation.baseSpeed);
-            updateElement('speed-base-value', `${this.simulation.baseSpeed.toFixed(1)}x`);
-            
-            updateElement('base-size', this.simulation.baseSize);
-            updateElement('size-value', `${this.simulation.baseSize.toFixed(1)}x`);
-            
-            updateElement('base-lifespan', this.simulation.baseLifespan);
-            updateElement('lifespan-value', this.simulation.baseLifespan);
-            
-            updateElement('base-reproduction', this.simulation.baseReproductionRate);
-            updateElement('reproduction-value', this.simulation.baseReproductionRate.toFixed(3));
-            
-            updateElement('mutation-rate', this.simulation.mutationRate);
-            updateElement('mutation-value', this.simulation.mutationRate.toFixed(2));
-            
-            const currentBehaviorElement = document.getElementById('current-behavior');
-            const currentBehavior = currentBehaviorElement ? currentBehaviorElement.value : 'aggressive';
-            
-            updateElement('interaction-strength', this.simulation.getBehaviorInteractionStrength(currentBehavior));
-            updateElement('interaction-value', `${this.simulation.getBehaviorInteractionStrength(currentBehavior).toFixed(1)}x`);
-            
-            updateElement('memory-duration', this.simulation.getBehaviorMemoryDuration(currentBehavior));
-            updateElement('memory-value', this.simulation.getBehaviorMemoryDuration(currentBehavior));
-            
-            updateElement('camera-distance', this.world.getCameraDistance());
-            updateElement('camera-value', this.world.getCameraDistance());
-            
-            updateElement('display-labels', this.simulation.displayLabels);
-            updateElement('show-interactions', this.simulation.showInteractions);
-            updateElement('show-health-bars', this.simulation.showHealthBars);
-        } catch (error) {
-            console.error("Error updating UI elements:", error);
-        }
+        const elements = {
+            'simulation-speed': this.simulation.speed,
+            'speed-value': `${this.simulation.speed.toFixed(1)}x`,
+            'initial-population': this.simulation.initialPopulationSize,
+            'population-value': this.simulation.initialPopulationSize,
+            'world-size': this.simulation.getWorldSize(),
+            'world-size-value': this.simulation.getWorldSize(),
+            'resource-abundance': this.simulation.resourceAbundance,
+            'resource-value': `${this.simulation.resourceAbundance.toFixed(1)}x`
+        };
+    
+        Object.entries(elements).forEach(([id, value]) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        });
     }
     
     // Persistence methods

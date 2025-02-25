@@ -1265,78 +1265,23 @@
             }
             
             updateAllUIElements() {
-                try {
-                    const updateElement = (id, value) => {
-                        const element = document.getElementById(id);
-                        if (element) {
-                            if (element.tagName === 'INPUT' && element.type === 'range') {
-                                element.value = value;
-                            } else if (element.tagName === 'INPUT' && element.type === 'checkbox') {
-                                element.checked = value;
-                            } else {
-                                element.textContent = value;
-                            }
-                        }
-                    };
-                    
-                    updateElement('simulation-speed', this.simulation.speed);
-                    updateElement('speed-value', `${this.simulation.speed.toFixed(1)}x`);
-                    
-                    updateElement('initial-population', this.simulation.initialPopulationSize);
-                    updateElement('population-value', this.simulation.initialPopulationSize);
-                    
-                    updateElement('world-size', this.simulation.getWorldSize());
-                    updateElement('world-size-value', this.simulation.getWorldSize());
-                    
-                    updateElement('resource-abundance', this.simulation.resourceAbundance);
-                    updateElement('resource-value', `${this.simulation.resourceAbundance.toFixed(1)}x`);
-                    
-                    updateElement('environment-harshness', this.simulation.environmentalHarshness);
-                    updateElement('harshness-value', `${this.simulation.environmentalHarshness.toFixed(1)}x`);
-                    
-                    updateElement('food-spawn-rate', this.simulation.foodSpawnRate);
-                    updateElement('food-rate-value', `${this.simulation.foodSpawnRate.toFixed(1)}x`);
-                    
-                    updateElement('food-energy-value', this.simulation.foodEnergyValue);
-                    updateElement('food-energy-value-display', this.simulation.foodEnergyValue);
-                    
-                    updateElement('base-energy', this.simulation.baseEnergy);
-                    updateElement('energy-value', this.simulation.baseEnergy);
-                    
-                    updateElement('base-speed', this.simulation.baseSpeed);
-                    updateElement('speed-base-value', `${this.simulation.baseSpeed.toFixed(1)}x`);
-                    
-                    updateElement('base-size', this.simulation.baseSize);
-                    updateElement('size-value', `${this.simulation.baseSize.toFixed(1)}x`);
-                    
-                    updateElement('base-lifespan', this.simulation.baseLifespan);
-                    updateElement('lifespan-value', this.simulation.baseLifespan);
-                    
-                    updateElement('base-reproduction', this.simulation.baseReproductionRate);
-                    updateElement('reproduction-value', this.simulation.baseReproductionRate.toFixed(3));
-                    
-                    updateElement('mutation-rate', this.simulation.mutationRate);
-                    updateElement('mutation-value', this.simulation.mutationRate.toFixed(2));
-                    
-                    const currentBehaviorElement = document.getElementById('current-behavior');
-                    const currentBehavior = currentBehaviorElement ? currentBehaviorElement.value : 'aggressive';
-                    
-                    updateElement('interaction-strength', this.simulation.getBehaviorInteractionStrength(currentBehavior));
-                    updateElement('interaction-value', `${this.simulation.getBehaviorInteractionStrength(currentBehavior).toFixed(1)}x`);
-                    
-                    updateElement('memory-duration', this.simulation.getBehaviorMemoryDuration(currentBehavior));
-                    updateElement('memory-value', this.simulation.getBehaviorMemoryDuration(currentBehavior));
-                    
-                    updateElement('camera-distance', this.world.getCameraDistance());
-                    updateElement('camera-value', this.world.getCameraDistance());
-                    
-                    updateElement('display-labels', this.simulation.displayLabels);
-                    updateElement('show-interactions', this.simulation.showInteractions);
-                    updateElement('show-health-bars', this.simulation.showHealthBars);
-                } catch (error) {
-                    console.error("Error updating UI elements:", error);
-                }
+                const elements = {
+                    'simulation-speed': this.simulation.speed,
+                    'speed-value': `${this.simulation.speed.toFixed(1)}x`,
+                    'initial-population': this.simulation.initialPopulationSize,
+                    'population-value': this.simulation.initialPopulationSize,
+                    'world-size': this.simulation.getWorldSize(),
+                    'world-size-value': this.simulation.getWorldSize(),
+                    'resource-abundance': this.simulation.resourceAbundance,
+                    'resource-value': `${this.simulation.resourceAbundance.toFixed(1)}x`
+                };
+            
+                Object.entries(elements).forEach(([id, value]) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = value;
+                });
             }
+            
             
             // Persistence methods
             saveSimulationSettings() {
