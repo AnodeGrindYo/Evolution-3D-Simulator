@@ -7,6 +7,16 @@ export class BaseBehavior {
         // Configurable behavior parameters
         this.interactionStrength = 1.0; // Multiplier for interaction intensity
         this.memoryDuration = 50; // How long to remember interactions (in seconds)
+
+        this.unlimitedMemory = false;
+    }
+
+    setUnlimitedMemory(enabled) {
+        this.unlimitedMemory = enabled;
+    }
+
+    getUnlimitedMemory() {
+        return this.unlimitedMemory;
     }
     
     getColor() {
@@ -47,9 +57,10 @@ export class BaseBehavior {
             wasPositive,
             timestamp: Date.now()
         });
-        
-        // Clean up old memories
-        this.cleanMemory();
+
+        if (!this.unlimitedMemory) {
+            this.cleanMemory();
+        }
     }
     
     // Helper method to get the last interaction with a specific entity
@@ -59,6 +70,7 @@ export class BaseBehavior {
     
     // Clean up memory entries older than memory duration
     cleanMemory() {
+        if (this.unlimitedMemory) return;
         const now = Date.now();
         const expirationTime = this.memoryDuration * 1000; // Convert to milliseconds
         

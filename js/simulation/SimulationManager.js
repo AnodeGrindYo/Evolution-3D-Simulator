@@ -519,6 +519,20 @@ export class SimulationManager {
             }
         });
     }
+
+    setUnlimitedMemoryForBehavior(behavior, enabled) {
+        this.world.getEntities().forEach(entity => {
+            if (entity.behavior && entity.behavior.type === behavior) {
+                entity.behavior.setUnlimitedMemory(enabled);
+            }
+        });
+    }
+    
+    getUnlimitedMemoryForBehavior(behavior) {
+        const entity = this.world.getEntities().find(e => e.behavior && e.behavior.type === behavior);
+        return entity ? entity.behavior.getUnlimitedMemory() : false;
+    }
+    
     
     // Save and load functionality
     serialize() {
